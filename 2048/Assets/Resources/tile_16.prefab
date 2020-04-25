@@ -94,3 +94,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a97159fb258771a4db0478d0facba334, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tileValue: 16
+  mergeThisTurn: 0
