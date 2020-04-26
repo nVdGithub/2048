@@ -18,7 +18,7 @@ public class Game : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
+        
         GenerateNewTile(2);
 
     }
@@ -26,9 +26,22 @@ public class Game : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        CheckUserInput();
+        // string tempT = Time.time.ToString();
 
-        debug.Add("Current Time", Time.time.ToString(), "currenttime");
+        if (!CheckGameOver())
+        {
+
+            CheckUserInput();
+            debug.Add("Time", Time.time.ToString(), "currenttime");
+           
+            //tempT = Time.time.ToString();
+        }
+        /* else
+        {
+            debug.Add("Your Record is : ", tempT, "currenttime2");
+        }
+        */
+
     }
 
 
@@ -65,6 +78,58 @@ public class Game : MonoBehaviour
             }
         }
     }
+
+
+
+    bool CheckGameOver()
+    {
+
+        if (transform.childCount < gridWidth * gridHeight)
+        {
+            debug.Add("Check Game Over", "False - Empty Spaces", "checkgameover");
+
+            return false;
+        }
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+
+                Transform currentTile = grid[x, y];
+                Transform tileBelow = null;
+                Transform tileBeside = null;
+
+                if (y != 0)
+                    tileBelow = grid[x, y - 1];
+
+                if (x != gridWidth - 1)
+                    tileBeside = grid[x + 1, y];
+
+                if (tileBeside != null)
+                {
+                    if (currentTile.GetComponent<Tile>().tileValue == tileBeside.GetComponent<Tile>().tileValue) {
+                        debug.Add("Check Game Over", "False - Tile Beside", "checkgameover");
+                        return false;
+                    }
+                }
+
+                if (tileBelow != null)
+                {
+                    if (currentTile.GetComponent<Tile>().tileValue == tileBelow.GetComponent<Tile>().tileValue)
+                    {
+                        debug.Add("Check Game Over", "False - Tile Below", "checkgameover");
+                        return false;
+                    }
+                }
+            }
+        }
+
+        debug.Add("Check Game Over", "True", "checkgameover");
+        return true;
+
+    }
+
 
 
 
