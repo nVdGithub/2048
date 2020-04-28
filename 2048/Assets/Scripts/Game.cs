@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Game : MonoBehaviour
 {
@@ -11,7 +12,23 @@ public class Game : MonoBehaviour
 
     public static Transform[,] grid = new Transform[gridWidth, gridHeight];
 
+    
+    public Canvas gameOverCanvas;
+
+    public Text gameScoreText;
+
+    public int score = 0;
+
+
     public CFDebug debug;
+
+
+
+    //    for timer
+
+    public string tempT = null;
+
+    //   
 
 
 
@@ -26,22 +43,34 @@ public class Game : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // string tempT = Time.time.ToString();
+
+        
+        tempT = Time.time.ToString();
+
+        
+
 
         if (!CheckGameOver())
         {
-
+        
             CheckUserInput();
-            debug.Add("Time", Time.time.ToString(), "currenttime");
-           
-            //tempT = Time.time.ToString();
-        }
-        /* else
-        {
-            debug.Add("Your Record is : ", tempT, "currenttime2");
-        }
-        */
 
+            debug.Add("Time", tempT, "currenttime");
+
+
+        }
+        else
+        {
+
+            gameOverCanvas.gameObject.SetActive(true);
+
+            tempT = null;
+
+            //debug.Add("Your Record Was : ", tempT, "currenttime2");
+            //debug.Add("Current Time", Time.time.ToString(), "currenttime3");
+        }
+        
+        
     }
 
 
@@ -79,6 +108,14 @@ public class Game : MonoBehaviour
         }
     }
 
+
+
+    void UpdateScore()
+    {
+
+        gameScoreText.text = score.ToString("000000000");
+
+    }
 
 
     bool CheckGameOver()
@@ -291,6 +328,11 @@ public class Game : MonoBehaviour
 
             UpdateGrid();
 
+            score += movingTileValue * 2;
+
+            UpdateScore(); 
+
+
             return true;
         }
         return false;
@@ -428,6 +470,23 @@ public class Game : MonoBehaviour
     {
 
         grid = new Transform[gridWidth, gridHeight];
+
+        score = 0;
+
+        List<GameObject> children = new List<GameObject>();
+
+        foreach (Transform t in transform)
+        {
+            children.Add(t.gameObject);
+        }
+
+        children.ForEach(t => DestroyImmediate(t));
+
+        gameOverCanvas.gameObject.SetActive(false);
+
+        UpdateScore();
+
+        GenerateNewTile(2);
 
     }
 }
