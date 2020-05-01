@@ -26,9 +26,12 @@ public class Game : MonoBehaviour
 
     private bool generatedNewTileThisTurn = true;
 
-    
 
+    public AudioClip moveTilesSound;
 
+    public AudioClip mergeTilesSound;
+
+    private AudioSource audioSource;
 
 
 
@@ -45,6 +48,8 @@ public class Game : MonoBehaviour
     {
         
         GenerateNewTile(2);
+
+        audioSource = transform.GetComponent<AudioSource>();
 
     }
 
@@ -260,8 +265,12 @@ public class Game : MonoBehaviour
         }
 
         if (tilesMovedCount != 0)
+        {
             generatedNewTileThisTurn = false;
-        
+
+            audioSource.PlayOneShot(moveTilesSound);
+
+        }
 
 
         for (int y = 0; y < gridHeight; ++y)
@@ -601,6 +610,8 @@ public class Game : MonoBehaviour
             string newTileName = "tile_" + movingTileValue * 2;
 
             score += movingTileValue * 2;
+
+            audioSource.PlayOneShot(mergeTilesSound);
 
             GameObject newTile = (GameObject)Instantiate(Resources.Load(newTileName, typeof(GameObject)), tile.transform.localPosition, Quaternion.identity);
 
