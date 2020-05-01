@@ -17,6 +17,8 @@ public class Game : MonoBehaviour
 
     public Text gameScoreText;
 
+    public Text bestScoreText;
+
     public int score = 0;
 
     public CFDebug debug;
@@ -51,6 +53,8 @@ public class Game : MonoBehaviour
 
         audioSource = transform.GetComponent<AudioSource>();
 
+        UpdateBestScore();
+
     }
 
     // Update is called once per frame
@@ -81,6 +85,9 @@ public class Game : MonoBehaviour
             }
             else
             {
+                SaveBestScore();
+                UpdateScore();
+                
                 gameOverCanvas.gameObject.SetActive(true);
 
                 tempT = null;
@@ -130,11 +137,27 @@ public class Game : MonoBehaviour
 
     void UpdateScore()
     {
-
         gameScoreText.text = score.ToString("000000000");
-
     }
 
+
+    void UpdateBestScore ()
+    {
+        bestScoreText.text = PlayerPrefs.GetInt("bestscore").ToString();
+    }
+
+
+    void SaveBestScore ()
+    {
+        int oldBestScore = PlayerPrefs.GetInt("bestscore");
+
+        if (score > oldBestScore)
+        {
+            PlayerPrefs.SetInt("bestscore", score);
+
+        }
+
+    }
 
     bool CheckGameOver()
     {
@@ -282,7 +305,7 @@ public class Game : MonoBehaviour
 
                     Transform t = grid[x, y];
 
-                    StartCoroutine(SlideTile(t.gameObject, 20f));
+                    StartCoroutine(SlideTile(t.gameObject, 40f));
 
                 }
             }
@@ -420,7 +443,7 @@ public class Game : MonoBehaviour
 
             newTile.transform.localPosition = new Vector2(newTile.transform.localPosition.x + 0.5f , newTile.transform.localPosition.y + 0.5f);
 
-            StartCoroutine(NewTilePopIn(newTile, new Vector2(0, 0), new Vector2(1, 1), 20f, newTile.transform.localPosition, new Vector2(newTile.transform.localPosition.x - 0.5f, newTile.transform.localPosition.y - 0.5f)));
+            StartCoroutine(NewTilePopIn(newTile, new Vector2(0, 0), new Vector2(1, 1), 40f, newTile.transform.localPosition, new Vector2(newTile.transform.localPosition.x - 0.5f, newTile.transform.localPosition.y - 0.5f)));
         }
     }
 
@@ -547,6 +570,9 @@ public class Game : MonoBehaviour
 
         UpdateScore();
 
+        UpdateBestScore();
+
+
         GenerateNewTile(2);
 
     }
@@ -625,7 +651,7 @@ public class Game : MonoBehaviour
 
             newTile.transform.localPosition = new Vector2(newTile.transform.localPosition.x + 0.5f, newTile.transform.localPosition.y + 0.5f);
 
-            yield return StartCoroutine(NewTilePopIn(newTile, new Vector2(0, 0), new Vector2(1, 1), 20f, newTile.transform.localPosition, new Vector2(newTile.transform.localPosition.x - 0.5f, newTile.transform.localPosition.y - 0.5f)));
+            yield return StartCoroutine(NewTilePopIn(newTile, new Vector2(0, 0), new Vector2(1, 1), 40f, newTile.transform.localPosition, new Vector2(newTile.transform.localPosition.x - 0.5f, newTile.transform.localPosition.y - 0.5f)));
 
 
         }
