@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Tile : MonoBehaviour
 {
@@ -10,11 +11,11 @@ public class Tile : MonoBehaviour
 
 
     public Vector2 startingPosition;
-    public Vector2 startingPositionmoveToPosition;
+    public Vector2 moveToPosition;
 
     public bool destroyMe = false;
 
-    public bool collidingTile;
+    public Transform collidingTile;
 
     public bool willMergeWithCollidingTile;
 

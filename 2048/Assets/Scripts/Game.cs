@@ -188,6 +188,8 @@ public class Game : MonoBehaviour
 
         int tilesMovedCount = 0;
 
+        UpdateGrid();
+
         if (direction == Vector2.left)
         {
             for (int x = 0; x < gridWidth; x++)
@@ -258,10 +260,26 @@ public class Game : MonoBehaviour
         }
 
         if (tilesMovedCount != 0)
+            generatedNewTileThisTurn = false;
+        
+
+
+        for (int y = 0; y < gridHeight; ++y)
         {
-            GenerateNewTile(1);
+            for (int x = 0; x < gridWidth; ++x)
+            {
+
+                if (grid[x,y] != null) {
+
+                    Transform t = grid[x, y];
+
+                    StartCoroutine(SlideTile(t.gameObject, 20f));
+
+                }
+            }
         }
     }
+
 
 
     bool MoveTile(Transform tile, Vector2 direction)
@@ -269,26 +287,40 @@ public class Game : MonoBehaviour
 
         Vector2 startPos = tile.localPosition;
 
+        Vector2 phantomTilePosition = tile.localPosition;
+
+        tile.GetComponent<Tile>().startingPosition = startPos;
+
+
+
         while (true)
         {
-            tile.transform.localPosition += (Vector3)direction;
 
-            Vector2 pos = tile.transform.localPosition;
+            phantomTilePosition += direction;
 
-            if (CheckIsInsideGrid(pos))
+            Vector2 previousPosition = phantomTilePosition - direction;
+
+            if (CheckIsInsideGrid(phantomTilePosition))
             {
-                if (CheckIsAtValidPosition(pos))
+                if (CheckIsAtValidPosition(phantomTilePosition))
                 {
-                    UpdateGrid();
+                    tile.GetComponent<Tile>().moveToPosition = phantomTilePosition;
+
+                    grid[(int)previousPosition.x , (int)previousPosition.y] = null;
+
+                    grid[(int)phantomTilePosition.x, (int)phantomTilePosition.y] = tile;
+
                 }
                 else
                 {
 
-                    if (!CheckAndCombineTiles(tile))
+                    if (!CheckAndCombineTiles(tile, phantomTilePosition, previousPosition))
                     {
-                        tile.transform.localPosition += -(Vector3)direction;
+                        phantomTilePosition += -direction;
 
-                        if (tile.transform.localPosition == (Vector3)startPos)
+                        tile.GetComponent<Tile>().moveToPosition = phantomTilePosition;
+
+                        if (phantomTilePosition == startPos)
                         {
                             return false;
                         }
@@ -301,9 +333,11 @@ public class Game : MonoBehaviour
             }
             else
             {
-                tile.transform.localPosition += -(Vector3)direction;
+                phantomTilePosition += -direction;
 
-                if (tile.transform.localPosition == (Vector3)startPos)
+                tile.GetComponent<Tile>().moveToPosition = phantomTilePosition;
+
+                if (phantomTilePosition == startPos)
                 {
                     return false;
                 }
@@ -316,35 +350,34 @@ public class Game : MonoBehaviour
 
 
 
-    bool CheckAndCombineTiles (Transform movingTile)
+    bool CheckAndCombineTiles (Transform movingTile, Vector2 phantomTilePosition, Vector2 previousPosition)
     {
         Vector2 pos = movingTile.transform.localPosition;
 
-        Transform collidingTile = grid[(int)pos.x, (int)pos.y];
+        Transform collidingTile = grid[(int)phantomTilePosition.x, (int)phantomTilePosition.y];
+
+
 
         int movingTileValue = movingTile.GetComponent<Tile>().tileValue;
         int collidingTileValue = collidingTile.GetComponent<Tile>().tileValue;
 
-        if (movingTileValue == collidingTileValue && !movingTile.GetComponent<Tile>().mergeThisTurn && !collidingTile.GetComponent<Tile>().mergeThisTurn) 
+        if (movingTileValue == collidingTileValue && !movingTile.GetComponent<Tile>().mergeThisTurn && !collidingTile.GetComponent<Tile>().mergeThisTurn && !collidingTile.GetComponent<Tile>().willMergeWithCollidingTile) 
         {
-            Destroy(movingTile.gameObject);
-            Destroy(collidingTile.gameObject);
 
-            grid[(int)pos.x, (int)pos.y] = null;
+            movingTile.GetComponent<Tile>().destroyMe = true;
 
-            string newTileName = "tile_" + movingTileValue * 2;
+            movingTile.GetComponent<Tile>().collidingTile = collidingTile;
 
-            GameObject newTile = (GameObject)Instantiate(Resources.Load(newTileName, typeof(GameObject)), pos, Quaternion.identity);
+            movingTile.GetComponent<Tile>().moveToPosition = phantomTilePosition;
 
-            newTile.transform.parent = transform;
-            newTile.GetComponent<Tile>().mergeThisTurn = true;
+            grid[(int)previousPosition.x, (int)previousPosition.y] = null;
 
-            UpdateGrid();
+            grid[(int)phantomTilePosition.x, (int)phantomTilePosition.y] = movingTile;
 
-            score += movingTileValue * 2;
+            movingTile.GetComponent<Tile>().willMergeWithCollidingTile = true;
+
 
             UpdateScore(); 
-
 
             return true;
         }
@@ -378,9 +411,7 @@ public class Game : MonoBehaviour
 
             newTile.transform.localPosition = new Vector2(newTile.transform.localPosition.x + 0.5f , newTile.transform.localPosition.y + 0.5f);
 
-            StartCoroutine(NewTilePopIn(newTile, new Vector2(0, 0), new Vector2(1, 1), 10f, newTile.transform.localPosition, new Vector2(newTile.transform.localPosition.x - 0.5f, newTile.transform.localPosition.y - 0.5f)));
-
-
+            StartCoroutine(NewTilePopIn(newTile, new Vector2(0, 0), new Vector2(1, 1), 20f, newTile.transform.localPosition, new Vector2(newTile.transform.localPosition.x - 0.5f, newTile.transform.localPosition.y - 0.5f)));
         }
     }
 
@@ -532,8 +563,67 @@ public class Game : MonoBehaviour
 
 
         numberOfCoroutinesRunning--;
-
     }
 
 
+    IEnumerator SlideTile(GameObject tile, float timeScale)
+    {
+
+        numberOfCoroutinesRunning++;
+
+
+        float progress = 0;
+
+        while (progress <= 1)
+        {
+
+            tile.transform.localPosition = Vector2.Lerp(tile.GetComponent<Tile>().startingPosition, tile.GetComponent<Tile>().moveToPosition, progress);
+
+            progress += Time.deltaTime * timeScale;
+
+            yield return null;
+        }
+
+        tile.transform.localPosition = tile.GetComponent<Tile>().moveToPosition;
+
+
+        if (tile.GetComponent<Tile>().destroyMe)
+        {
+            int movingTileValue = tile.GetComponent<Tile>().tileValue;
+
+            if (tile.GetComponent<Tile>().collidingTile != null)
+            {
+                DestroyImmediate (tile.GetComponent<Tile>().collidingTile.gameObject);
+            }
+
+            Destroy(tile.gameObject);
+
+            string newTileName = "tile_" + movingTileValue * 2;
+
+            score += movingTileValue * 2;
+
+            GameObject newTile = (GameObject)Instantiate(Resources.Load(newTileName, typeof(GameObject)), tile.transform.localPosition, Quaternion.identity);
+
+            newTile.transform.parent = transform;
+
+            newTile.GetComponent<Tile>().mergeThisTurn = true;
+
+            grid[(int)newTile.transform.localPosition.x, (int)newTile.transform.localPosition.y] = newTile.transform;
+
+            newTile.transform.localScale = new Vector2(0, 0);
+
+            newTile.transform.localPosition = new Vector2(newTile.transform.localPosition.x + 0.5f, newTile.transform.localPosition.y + 0.5f);
+
+            yield return StartCoroutine(NewTilePopIn(newTile, new Vector2(0, 0), new Vector2(1, 1), 20f, newTile.transform.localPosition, new Vector2(newTile.transform.localPosition.x - 0.5f, newTile.transform.localPosition.y - 0.5f)));
+
+
+        }
+
+
+
+        numberOfCoroutinesRunning--;
+    }
+
 }
+
+
