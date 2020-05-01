@@ -19,8 +19,16 @@ public class Game : MonoBehaviour
 
     public int score = 0;
 
-
     public CFDebug debug;
+
+
+    private int numberOfCoroutinesRunning = 0;
+
+    private bool generatedNewTileThisTurn = true;
+
+    
+
+
 
 
 
@@ -44,33 +52,38 @@ public class Game : MonoBehaviour
     void Update()
     {
 
-        
+        // Timer temp
         tempT = Time.time.ToString();
 
-        
 
 
-        if (!CheckGameOver())
+        if (numberOfCoroutinesRunning == 0)
         {
-        
-            CheckUserInput();
+            if (!generatedNewTileThisTurn)
+            {
+                generatedNewTileThisTurn = true;
 
-            debug.Add("Time", tempT, "currenttime");
+                GenerateNewTile(1);
+            }
 
+            
 
+            if (!CheckGameOver())
+            {
+                CheckUserInput();
+
+                debug.Add("Time", tempT, "currenttime");
+            }
+            else
+            {
+                gameOverCanvas.gameObject.SetActive(true);
+
+                tempT = null;
+
+                //debug.Add("Your Record Was : ", tempT, "currenttime2");
+                //debug.Add("Current Time", Time.time.ToString(), "currenttime3");
+            }
         }
-        else
-        {
-
-            gameOverCanvas.gameObject.SetActive(true);
-
-            tempT = null;
-
-            //debug.Add("Your Record Was : ", tempT, "currenttime2");
-            //debug.Add("Current Time", Time.time.ToString(), "currenttime3");
-        }
-        
-        
     }
 
 
@@ -358,9 +371,17 @@ public class Game : MonoBehaviour
             GameObject newTile = (GameObject)Instantiate(Resources.Load(tile, typeof(GameObject)), locationForNewTile, Quaternion.identity);
 
             newTile.transform.parent = transform;
-        }
 
-        UpdateGrid();
+            grid[(int)newTile.transform.localPosition.x, (int)newTile.transform.localPosition.y] = newTile.transform;
+
+            newTile.transform.localScale = new Vector2(0, 0);
+
+            newTile.transform.localPosition = new Vector2(newTile.transform.localPosition.x + 0.5f , newTile.transform.localPosition.y + 0.5f);
+
+            StartCoroutine(NewTilePopIn(newTile, new Vector2(0, 0), new Vector2(1, 1), 10f, newTile.transform.localPosition, new Vector2(newTile.transform.localPosition.x - 0.5f, newTile.transform.localPosition.y - 0.5f)));
+
+
+        }
     }
 
 
@@ -489,4 +510,30 @@ public class Game : MonoBehaviour
         GenerateNewTile(2);
 
     }
+
+    IEnumerator NewTilePopIn (GameObject tile, Vector2 initialScale, Vector2 finalScale, float timeScale, Vector2 initialPosition, Vector2 finalPosition)
+    {
+        numberOfCoroutinesRunning++;
+
+        float progress = 0;
+
+        while (progress <= 1)
+        {
+
+            tile.transform.localScale = Vector2.Lerp(initialScale, finalScale, progress);
+            tile.transform.localPosition = Vector2.Lerp(initialPosition, finalPosition, progress);
+            progress += Time.deltaTime * timeScale;
+            yield return null;
+        }
+
+        tile.transform.localScale = finalScale;
+        tile.transform.localPosition = finalPosition;
+
+
+
+        numberOfCoroutinesRunning--;
+
+    }
+
+
 }

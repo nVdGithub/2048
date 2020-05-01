@@ -9,7 +9,14 @@ public class Tile : MonoBehaviour
     public bool mergeThisTurn;
 
 
+    public Vector2 startingPosition;
+    public Vector2 startingPositionmoveToPosition;
 
+    public bool destroyMe = false;
+
+    public bool collidingTile;
+
+    public bool willMergeWithCollidingTile;
 
 
 }
