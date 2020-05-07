@@ -1,4 +1,5 @@
 ﻿//using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,11 @@ public class Game : MonoBehaviour
 
     public static Transform[,] grid = new Transform[gridWidth, gridHeight];
 
+
+    public static NotATile[,] previousGrid = new NotATile[gridWidth, gridHeight];
+
     
+
     public Canvas gameOverCanvas;
 
     public Text gameScoreText;
@@ -20,6 +25,9 @@ public class Game : MonoBehaviour
     public Text bestScoreText;
 
     public int score = 0;
+
+    private int previousScore = 0;
+
 
     public CFDebug debug;
 
@@ -36,6 +44,10 @@ public class Game : MonoBehaviour
     private AudioSource audioSource;
 
 
+    bool madeFirstMove = false;
+
+
+
 
     //    for timer
 
@@ -48,12 +60,14 @@ public class Game : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+
         GenerateNewTile(2);
 
         audioSource = transform.GetComponent<AudioSource>();
 
         UpdateBestScore();
+
+        StorePreviuosTiles();
 
     }
 
@@ -75,7 +89,7 @@ public class Game : MonoBehaviour
                 GenerateNewTile(1);
             }
 
-            
+
 
             if (!CheckGameOver())
             {
@@ -87,7 +101,7 @@ public class Game : MonoBehaviour
             {
                 SaveBestScore();
                 UpdateScore();
-                
+
                 gameOverCanvas.gameObject.SetActive(true);
 
                 tempT = null;
@@ -105,6 +119,13 @@ public class Game : MonoBehaviour
 
         if (down || up || left || right)
         {
+
+            if (!madeFirstMove)
+                madeFirstMove = true;
+
+
+            StorePreviuosTiles();
+
 
             PrepareTilesForMerging();
 
@@ -135,19 +156,51 @@ public class Game : MonoBehaviour
 
 
 
+    private void StorePreviuosTiles()
+    {
+
+        previousScore = score;
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                Transform tempTile = grid[x, y];
+
+                previousGrid[x, y] = null;
+
+                if (tempTile != null)
+                {
+                    NotATile notATile = new NotATile();
+
+                    notATile.location = tempTile.localPosition;
+
+                    notATile.value = tempTile.GetComponent<Tile>().tileValue;
+
+                    previousGrid[x, y] = notATile;
+                }
+            }
+        }
+    }
+
+
+
+
+
+
     void UpdateScore()
     {
         gameScoreText.text = score.ToString("000000000");
     }
 
 
-    void UpdateBestScore ()
+    void UpdateBestScore()
     {
         bestScoreText.text = PlayerPrefs.GetInt("bestscore").ToString();
     }
 
 
-    void SaveBestScore ()
+    void SaveBestScore()
     {
         int oldBestScore = PlayerPrefs.GetInt("bestscore");
 
@@ -274,7 +327,7 @@ public class Game : MonoBehaviour
         {
             for (int x = 0; x < gridWidth; x++)
             {
-                for (int y = gridHeight - 1; y >= 0 ; y--)
+                for (int y = gridHeight - 1; y >= 0; y--)
                 {
                     if (grid[x, y] != null)
                     {
@@ -301,7 +354,7 @@ public class Game : MonoBehaviour
             for (int x = 0; x < gridWidth; ++x)
             {
 
-                if (grid[x,y] != null) {
+                if (grid[x, y] != null) {
 
                     Transform t = grid[x, y];
 
@@ -338,7 +391,7 @@ public class Game : MonoBehaviour
                 {
                     tile.GetComponent<Tile>().moveToPosition = phantomTilePosition;
 
-                    grid[(int)previousPosition.x , (int)previousPosition.y] = null;
+                    grid[(int)previousPosition.x, (int)previousPosition.y] = null;
 
                     grid[(int)phantomTilePosition.x, (int)phantomTilePosition.y] = tile;
 
@@ -382,7 +435,7 @@ public class Game : MonoBehaviour
 
 
 
-    bool CheckAndCombineTiles (Transform movingTile, Vector2 phantomTilePosition, Vector2 previousPosition)
+    bool CheckAndCombineTiles(Transform movingTile, Vector2 phantomTilePosition, Vector2 previousPosition)
     {
         Vector2 pos = movingTile.transform.localPosition;
 
@@ -393,7 +446,7 @@ public class Game : MonoBehaviour
         int movingTileValue = movingTile.GetComponent<Tile>().tileValue;
         int collidingTileValue = collidingTile.GetComponent<Tile>().tileValue;
 
-        if (movingTileValue == collidingTileValue && !movingTile.GetComponent<Tile>().mergeThisTurn && !collidingTile.GetComponent<Tile>().mergeThisTurn && !collidingTile.GetComponent<Tile>().willMergeWithCollidingTile) 
+        if (movingTileValue == collidingTileValue && !movingTile.GetComponent<Tile>().mergeThisTurn && !collidingTile.GetComponent<Tile>().mergeThisTurn && !collidingTile.GetComponent<Tile>().willMergeWithCollidingTile)
         {
 
             movingTile.GetComponent<Tile>().destroyMe = true;
@@ -409,7 +462,7 @@ public class Game : MonoBehaviour
             movingTile.GetComponent<Tile>().willMergeWithCollidingTile = true;
 
 
-            UpdateScore(); 
+            UpdateScore();
 
             return true;
         }
@@ -426,7 +479,7 @@ public class Game : MonoBehaviour
 
             string tile = "tile_2";
 
-            float chanceOfTwo = Random.Range(0f, 1f);
+            float chanceOfTwo = UnityEngine.Random.Range(0f, 1f);
 
             if (chanceOfTwo > 0.9f)
             {
@@ -441,7 +494,7 @@ public class Game : MonoBehaviour
 
             newTile.transform.localScale = new Vector2(0, 0);
 
-            newTile.transform.localPosition = new Vector2(newTile.transform.localPosition.x + 0.5f , newTile.transform.localPosition.y + 0.5f);
+            newTile.transform.localPosition = new Vector2(newTile.transform.localPosition.x + 0.5f, newTile.transform.localPosition.y + 0.5f);
 
             StartCoroutine(NewTilePopIn(newTile, new Vector2(0, 0), new Vector2(1, 1), 40f, newTile.transform.localPosition, new Vector2(newTile.transform.localPosition.x - 0.5f, newTile.transform.localPosition.y - 0.5f)));
         }
@@ -482,11 +535,11 @@ public class Game : MonoBehaviour
         List<int> x = new List<int>();
         List<int> y = new List<int>();
 
-        for (int j = 0; j<gridWidth; j++)
+        for (int j = 0; j < gridWidth; j++)
         {
             for (int i = 0; i < gridHeight; i++)
             {
-                if (grid[j,i] == null)
+                if (grid[j, i] == null)
                 {
                     x.Add(j);
                     y.Add(i);
@@ -496,13 +549,13 @@ public class Game : MonoBehaviour
         }
 
 
-        int randIndex = Random.Range(0,x.Count);
+        int randIndex = UnityEngine.Random.Range(0, x.Count);
 
         int randX = x.ElementAt(randIndex);
         int randY = y.ElementAt(randIndex);
 
         debug.Add("New Random Tile Location", randX + "," + randY, "randomlocation");
-        
+
 
 
         return new Vector2(randX, randY);
@@ -512,7 +565,7 @@ public class Game : MonoBehaviour
 
 
 
-    bool CheckIsInsideGrid (Vector2 pos)
+    bool CheckIsInsideGrid(Vector2 pos)
     {
         if (pos.x >= 0 && pos.x <= gridWidth - 1 && pos.y >= 0 && pos.y <= gridHeight - 1)
         {
@@ -523,7 +576,7 @@ public class Game : MonoBehaviour
 
 
 
-    bool CheckIsAtValidPosition (Vector2 pos)
+    bool CheckIsAtValidPosition(Vector2 pos)
     {
         if (grid[(int)pos.x, (int)pos.y] == null)
         {
@@ -572,10 +625,57 @@ public class Game : MonoBehaviour
 
         UpdateBestScore();
 
-
         GenerateNewTile(2);
+    }
+
+
+    public void Undo()
+    {
+
+        if (madeFirstMove)
+        {
+            score = previousScore;
+
+            UpdateScore();
+
+
+            foreach (Transform child in transform)
+            {
+                Destroy(child.gameObject);
+            }
+
+
+            for (int x = 0; x < gridWidth; x++)
+            {
+                for (int y = 0; y < gridHeight; y++)
+                {
+                    grid[x, y] = null;
+
+                    NotATile notATile = previousGrid[x, y];
+
+                    if (notATile != null)
+                    {
+                        int tileValue = notATile.value;
+                        string newTileName = "Tile_" + tileValue;
+
+                        GameObject newTile = (GameObject)Instantiate(Resources.Load(newTileName, typeof(GameObject)), notATile.location, Quaternion.identity);
+
+                        newTile.transform.parent = transform;
+
+                        grid[x, y] = newTile.transform;
+
+                    }
+                }
+            }
+
+
+
+        }
 
     }
+
+
+
 
     IEnumerator NewTilePopIn (GameObject tile, Vector2 initialScale, Vector2 finalScale, float timeScale, Vector2 initialPosition, Vector2 finalPosition)
     {
@@ -636,6 +736,8 @@ public class Game : MonoBehaviour
             string newTileName = "tile_" + movingTileValue * 2;
 
             score += movingTileValue * 2;
+
+            UpdateScore();
 
             audioSource.PlayOneShot(mergeTilesSound);
 
